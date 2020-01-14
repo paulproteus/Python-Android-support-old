@@ -43,7 +43,7 @@ def fix(filename):
             # some tests try to make a socket with no params; somehow this is not OK on Android!
             or "socket.socket()" in line
             # one test tries to do os.chdir('/') to get the top of the filesystem tree, then os.listdir(). This will not work.
-            or ' os.chdir(os.sep)'
+            or " self.assertEqual(set(os.listdir()), set(os.listdir(os.sep)))"
         ):
             matching_lines.append(i)
 
