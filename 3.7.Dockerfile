@@ -45,10 +45,9 @@ RUN wget -q https://www.openssl.org/source/openssl-1.1.1d.tar.gz && sha256sum op
 # https://stackoverflow.com/questions/57083946/android-openssl-1-1-1-unsatisfiedlinkerror
 # I'm not even sure it matters.
 RUN cd openssl-1.1.1d && ANDROID_NDK_HOME="$NDK" ./Configure linux-x86_64 -D__ANDROID_API__="$ANDROID_SDK_VERSION" --prefix="$BUILD_HOME/built/openssl" --openssldir="$BUILD_HOME/built/openssl"
-RUN cd openssl-1.1.1d && make SHLIB_EXT='.so'
-RUN cd openssl-1.1.1d && make install SHLIB_EXT='.so'
+RUN cd openssl-1.1.1d && make SHLIB_EXT='${SHLIB_VERSION_NUMBER}.so'
+RUN cd openssl-1.1.1d && make install SHLIB_EXT='${SHLIB_VERSION_NUMBER}.so'
 RUN ls -l $BUILD_HOME/built/openssl/lib
-RUN exit 1
 
 # This build container builds Python, rubicon-java, and any dependencies.
 FROM toolchain as build
