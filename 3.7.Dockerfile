@@ -46,11 +46,6 @@ RUN cd openssl-1.1.1d && ANDROID_NDK_HOME="$NDK" ./Configure linux-x86_64 -D__AN
 # This build container builds Python, rubicon-java, and any dependencies.
 FROM toolchain as build
 
-# Copy OpenSSL from previous stage
-COPY --from=opensslbuild /opt/python-build/built/openssl /opt/python-build/built/openssl
-ENV OPENSSL_INSTALL_DIR=/opt/python-build/built/openssl
-RUN cp "$OPENSSL_INSTALL_DIR"/lib/*so* "$JNI_LIBS"
-
 # Install libffi, required for ctypes.
 RUN apt-get update -qq && apt-get -qq install file make
 RUN wget -q https://github.com/libffi/libffi/releases/download/v3.3/libffi-3.3.tar.gz && tar xf libffi-3.3.tar.gz && rm libffi-3.3.tar.gz
@@ -60,6 +55,12 @@ RUN mkdir -p "$LIBFFI_INSTALL_DIR" && \
     ./configure --host "$TARGET" --build "$TARGET""$ANDROID_SDK_VERSION" --prefix="$LIBFFI_INSTALL_DIR" && \
     make clean install && mkdir -p "$JNI_LIBS" && cp "$LIBFFI_INSTALL_DIR"/lib/libffi*so "$JNI_LIBS"
 ENV PKG_CONFIG_PATH="$LIBFFI_INSTALL_DIR/lib/pkgconfig"
+
+# Get OpenSSL from earlier build phase
+# Copy OpenSSL from previous stage
+COPY --from=opensslbuild /opt/python-build/built/openssl /opt/python-build/built/openssl
+ENV OPENSSL_INSTALL_DIR=/opt/python-build/built/openssl
+RUN mkdir -p "$JNI_LIBS" && cp "$OPENSSL_INSTALL_DIR"/lib/*so* "$JNI_LIBS"
 
 # Download & patch Python
 RUN apt-get update -qq && apt-get -qq install python3.7 pkg-config git zip xz-utils
