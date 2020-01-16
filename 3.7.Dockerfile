@@ -39,17 +39,12 @@ WORKDIR /opt/python-build
 
 FROM toolchain as opensslbuild
 # OpenSSL requires libfindlibs-libs-perl. make is nice, too.
-RUN apt-get update -qq && apt-get -qq install libfindbin-libs-perl make patch
+RUN apt-get update -qq && apt-get -qq install libfindbin-libs-perl make
 RUN wget -q https://www.openssl.org/source/openssl-1.1.1d.tar.gz && sha256sum openssl-1.1.1d.tar.gz | grep -q 1e3a91bc1f9dfce01af26026f856e064eab4c8ee0a8f457b5ae30b40b8b711f2 && tar xf openssl-1.1.1d.tar.gz && rm -rf openssl-1.1.1d.tar.gz
-# Borrow kivy's SHLIB_EXT patch. See also:
-# https://github.com/openssl/openssl/issues/3902
-# OpenSSL upstream suggests passing it as a paramter to `make`, but with OpenSSL 1.1.1d,
-# this results in the build succeeding but `make install` failing.
-RUN cd openssl-1.1.1d && wget -q https://raw.githubusercontent.com/kivy/python-for-android/develop/pythonforandroid/recipes/openssl/disable-sover.patch -O- | patch -p1 Makefile
 # TODO(someday): Test out `no-comp`. This is only here to avoid a libz dependency. See:
 # https://stackoverflow.com/questions/57083946/android-openssl-1-1-1-unsatisfiedlinkerror
 # I'm not even sure it matters.
-RUN cd openssl-1.1.1d && ANDROID_NDK_HOME="$NDK" ./Configure linux-x86_64 -D__ANDROID_API__="$ANDROID_SDK_VERSION" --prefix="$BUILD_HOME/built/openssl" --openssldir="$BUILD_HOME/built/openssl" && make && make install
+RUN cd openssl-1.1.1d && ANDROID_NDK_HOME="$NDK" ./Configure linux-x86_64 -D__ANDROID_API__="$ANDROID_SDK_VERSION" --prefix="$BUILD_HOME/built/openssl" --openssldir="$BUILD_HOME/built/openssl" && make  SHLIB_VERSION_NUMBER='' SHLIB_EXT='.so' &&  SHLIB_VERSION_NUMBER='' SHLIB_EXT='.so' make install
 RUN ls -l $BUILD_HOME/built/openssl/lib
 RUN exit 1
 
