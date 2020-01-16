@@ -79,7 +79,7 @@ RUN python3.7 3.7.ignore_some_tests.py $(find Python-3.7.6/Lib/test -iname '*.py
 RUN cd Python-3.7.6 && LDFLAGS=`pkg-config --libs-only-L libffi` \
   ./configure --host "$TARGET" --build "$TARGET""$ANDROID_SDK_VERSION" --enable-shared \
   --enable-ipv6 ac_cv_file__dev_ptmx=yes \
-  --openssldir=$BUILD_HOME/built/openssl \
+  --with-openssl=$BUILD_HOME/built/openssl \
   ac_cv_file__dev_ptc=no --without-ensurepip ac_cv_little_endian_double=yes \
   --prefix="$PYTHON_INSTALL_DIR" \
   ac_cv_func_setuid=no ac_cv_func_getresuid=no ac_cv_func_setresgid=no ac_cv_func_setgid=no ac_cv_func_sethostname=no ac_cv_func_setresuid=no ac_cv_func_setregid=no ac_cv_func_setreuid=no ac_cv_func_getresgid=no ac_cv_func_setregid=no ac_cv_func_clock_settime=no
