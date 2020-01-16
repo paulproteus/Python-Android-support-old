@@ -48,6 +48,8 @@ FROM toolchain as build
 
 # Copy OpenSSL from previous stage
 COPY --from=opensslbuild /opt/python-build/built/openssl /opt/python-build/built/openssl
+ENV OPENSSL_INSTALL_DIR=/opt/python-build/built/openssl
+RUN cp "$OPENSSL_INSTALL_DIR"/lib/*so* "$JNI_LIBS"
 
 # Install libffi, required for ctypes.
 RUN apt-get update -qq && apt-get -qq install file make
@@ -76,10 +78,10 @@ ADD 3.7.ignore_some_tests.py .
 RUN python3.7 3.7.ignore_some_tests.py $(find Python-3.7.6/Lib/test -iname '*.py') $(find Python-3.7.6/Lib/distutils/tests -iname '*.py') $(find Python-3.7.6/Lib/unittest/test/ -iname '*.py') $(find Python-3.7.6/Lib/lib2to3/tests -iname '*.py')
 
 # Build Python, pre-configuring some values so it doesn't check if those exist.
-RUN cd Python-3.7.6 && LDFLAGS=`pkg-config --libs-only-L libffi` \
+RUN cd Python-3.7.6 && LDFLAGS="$(pkg-config --libs-only-L libffi) -L$OPENSSL_INSTALL_DIR/lib" \
   ./configure --host "$TARGET" --build "$TARGET""$ANDROID_SDK_VERSION" --enable-shared \
   --enable-ipv6 ac_cv_file__dev_ptmx=yes \
-  --with-openssl=$BUILD_HOME/built/openssl \
+  --with-openssl=$OPENSSL_INSTALL_DIR \
   ac_cv_file__dev_ptc=no --without-ensurepip ac_cv_little_endian_double=yes \
   --prefix="$PYTHON_INSTALL_DIR" \
   ac_cv_func_setuid=no ac_cv_func_getresuid=no ac_cv_func_setresgid=no ac_cv_func_setgid=no ac_cv_func_sethostname=no ac_cv_func_setresuid=no ac_cv_func_setregid=no ac_cv_func_setreuid=no ac_cv_func_getresgid=no ac_cv_func_setregid=no ac_cv_func_clock_settime=no
