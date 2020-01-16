@@ -44,7 +44,9 @@ RUN wget -q https://www.openssl.org/source/openssl-1.1.1d.tar.gz && sha256sum op
 # TODO(someday): Test out `no-comp`. This is only here to avoid a libz dependency. See:
 # https://stackoverflow.com/questions/57083946/android-openssl-1-1-1-unsatisfiedlinkerror
 # I'm not even sure it matters.
-RUN cd openssl-1.1.1d && ANDROID_NDK_HOME="$NDK" ./Configure linux-x86_64 -D__ANDROID_API__="$ANDROID_SDK_VERSION" --prefix="$BUILD_HOME/built/openssl" --openssldir="$BUILD_HOME/built/openssl" && make  SHLIB_VERSION_NUMBER='' SHLIB_EXT='.so' &&  SHLIB_VERSION_NUMBER='' SHLIB_EXT='.so' make install
+RUN cd openssl-1.1.1d && ANDROID_NDK_HOME="$NDK" ./Configure linux-x86_64 -D__ANDROID_API__="$ANDROID_SDK_VERSION" --prefix="$BUILD_HOME/built/openssl" --openssldir="$BUILD_HOME/built/openssl"
+RUN cd openssl-1.1.1d && make SHLIB_EXT='.so'
+RUN cd openssl-1.1.1d && make install SHLIB_EXT='.so'
 RUN ls -l $BUILD_HOME/built/openssl/lib
 RUN exit 1
 
