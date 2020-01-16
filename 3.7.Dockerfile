@@ -39,12 +39,19 @@ WORKDIR /opt/python-build
 
 FROM toolchain as opensslbuild
 # OpenSSL requires libfindlibs-libs-perl. make is nice, too.
-RUN apt-get update -qq && apt-get -qq install libfindbin-libs-perl make
+RUN apt-get update -qq && apt-get -qq install libfindbin-libs-perl make patch
 RUN wget -q https://www.openssl.org/source/openssl-1.1.1d.tar.gz && sha256sum openssl-1.1.1d.tar.gz | grep -q 1e3a91bc1f9dfce01af26026f856e064eab4c8ee0a8f457b5ae30b40b8b711f2 && tar xf openssl-1.1.1d.tar.gz && rm -rf openssl-1.1.1d.tar.gz
-# TODO(someday): Remove `no-comp`. This is only here to avoid a libz dependency. See:
+# Borrow kivy's SHLIB_EXT patch. See also:
+# https://github.com/openssl/openssl/issues/3902
+# OpenSSL upstream suggests passing it as a paramter to `make`, but with OpenSSL 1.1.1d,
+# this results in the build succeeding but `make install` failing.
+RUN cd openssl-1.1.1d && wget -q https://raw.githubusercontent.com/kivy/python-for-android/develop/pythonforandroid/recipes/openssl/disable-sover.patch -O- | patch -p1 Makefile
+# TODO(someday): Test out `no-comp`. This is only here to avoid a libz dependency. See:
 # https://stackoverflow.com/questions/57083946/android-openssl-1-1-1-unsatisfiedlinkerror
 # I'm not even sure it matters.
-RUN cd openssl-1.1.1d && ANDROID_NDK_HOME="$NDK" ./Configure linux-x86_64 no-comp -D__ANDROID_API__="$ANDROID_SDK_VERSION" --prefix="$BUILD_HOME/built/openssl" --openssldir="$BUILD_HOME/built/openssl" && make && make install
+RUN cd openssl-1.1.1d && ANDROID_NDK_HOME="$NDK" ./Configure linux-x86_64 -D__ANDROID_API__="$ANDROID_SDK_VERSION" --prefix="$BUILD_HOME/built/openssl" --openssldir="$BUILD_HOME/built/openssl" && make && make install
+RUN ls -l $BUILD_HOME/built/openssl/lib
+RUN exit 1
 
 # This build container builds Python, rubicon-java, and any dependencies.
 FROM toolchain as build
@@ -63,9 +70,8 @@ ENV PKG_CONFIG_PATH="$LIBFFI_INSTALL_DIR/lib/pkgconfig"
 # Copy OpenSSL from previous stage
 COPY --from=opensslbuild /opt/python-build/built/openssl /opt/python-build/built/openssl
 ENV OPENSSL_INSTALL_DIR=/opt/python-build/built/openssl
-# Remove the .1.1.1 symlinks, because maybe they confuse Android.
-ENV rm "$OPENSSL_INSTALL_DIR"/lib/lib{ssl,crypto}.so.*
-RUN mkdir -p "$JNI_LIBS" && cp "$OPENSSL_INSTALL_DIR"/lib/{libssl,libcrypto}.so "$JNI_LIBS"
+# Remove the .1.1 symlinks, because maybe they confuse Android.
+RUN for lib in ssl crypto; do rm "$OPENSSL_INSTALL_DIR"/lib/lib${lib}.so && mv "$OPENSSL_INSTALL_DIR"/lib/lib${lib}.so.1.1 "$OPENSSL_INSTALL_DIR"/lib/lib${lib}.so; cp "$OPENSSL_INSTALL_DIR"/lib/lib${lib}.so "$JNI_LIBS"; done
 
 # Download & patch Python
 RUN apt-get update -qq && apt-get -qq install python3.7 pkg-config git zip xz-utils
