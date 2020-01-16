@@ -38,23 +38,8 @@ ENV PYTHON_INSTALL_DIR="$BUILD_HOME/built/python"
 WORKDIR /opt/python-build
 
 FROM toolchain as opensslbuild
-# OpenSSL requires libfindlibs-libs-perl.
+# OpenSSL requires libfindlibs-libs-perl. make is nice, too.
 RUN apt-get update -qq && apt-get -qq install libfindbin-libs-perl make
-# Per https://github.com/openssl/openssl/blob/master/NOTES.ANDROID , the NDK "standalone toolchain"
-# makes configuring paths easier. We use that approach, which is documented here:
-# https://developer.android.com/ndk/guides/standalone_toolchain
-#RUN $NDK/build/tools/make_standalone_toolchain.py \
-#    --arch x86_64 --api 29 --install-dir /tmp/my-android-toolchain
-#ENV TOOLCHAIN="" \
-#    AR="" \
-#    AS="" \
-#    CC="clang" \
-#    CXX="" \
-#    LD="" \
-#    RALIB="" \
-#    STRIP="" \
-#    READELF="" \
-#    PATH="/tmp/my-android-toolchain/bin:${PATH}"	
 RUN wget -q https://www.openssl.org/source/openssl-1.1.1d.tar.gz && sha256sum openssl-1.1.1d.tar.gz | grep -q 1e3a91bc1f9dfce01af26026f856e064eab4c8ee0a8f457b5ae30b40b8b711f2 && tar xf openssl-1.1.1d.tar.gz && rm -rf openssl-1.1.1d.tar.gz
 RUN cd openssl-1.1.1d && ANDROID_NDK_HOME="$NDK" ./Configure linux-x86_64 -D__ANDROID_API__="$ANDROID_SDK_VERSION" --prefix="$BUILD_HOME/built/openssl" --openssldir="$BUILD_HOME/built/openssl" && make && make install
 
@@ -94,6 +79,7 @@ RUN python3.7 3.7.ignore_some_tests.py $(find Python-3.7.6/Lib/test -iname '*.py
 RUN cd Python-3.7.6 && LDFLAGS=`pkg-config --libs-only-L libffi` \
   ./configure --host "$TARGET" --build "$TARGET""$ANDROID_SDK_VERSION" --enable-shared \
   --enable-ipv6 ac_cv_file__dev_ptmx=yes \
+  --openssldir=$BUILD_HOME/built/openssl \
   ac_cv_file__dev_ptc=no --without-ensurepip ac_cv_little_endian_double=yes \
   --prefix="$PYTHON_INSTALL_DIR" \
   ac_cv_func_setuid=no ac_cv_func_getresuid=no ac_cv_func_setresgid=no ac_cv_func_setgid=no ac_cv_func_sethostname=no ac_cv_func_setresuid=no ac_cv_func_setregid=no ac_cv_func_setreuid=no ac_cv_func_getresgid=no ac_cv_func_setregid=no ac_cv_func_clock_settime=no
