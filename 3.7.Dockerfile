@@ -56,11 +56,13 @@ RUN apt-get update -qq && apt-get -qq install libfindbin-libs-perl make
 #    READELF="" \
 #    PATH="/tmp/my-android-toolchain/bin:${PATH}"	
 RUN wget -q https://www.openssl.org/source/openssl-1.1.1d.tar.gz && sha256sum openssl-1.1.1d.tar.gz | grep -q 1e3a91bc1f9dfce01af26026f856e064eab4c8ee0a8f457b5ae30b40b8b711f2 && tar xf openssl-1.1.1d.tar.gz && rm -rf openssl-1.1.1d.tar.gz
-RUN cd openssl-1.1.1d && ANDROID_NDK_HOME="$NDK" ./Configure linux-x86_64 -D__ANDROID_API__="$ANDROID_SDK_VERSION" && make
-RUN exit 1
+RUN cd openssl-1.1.1d && ANDROID_NDK_HOME="$NDK" ./Configure linux-x86_64 -D__ANDROID_API__="$ANDROID_SDK_VERSION" --prefix="$BUILD_HOME/built/openssl" --openssldir="$BUILD_HOME/built/openssl" && make && make install
 
 # This build container builds Python, rubicon-java, and any dependencies.
 FROM toolchain as build
+
+# Copy OpenSSL from previous stage
+COPY --from=opensslbuild /opt/python-build/built/openssl /opt/python-build/built/openssl
 
 # Install libffi, required for ctypes.
 RUN apt-get update -qq && apt-get -qq install file make
