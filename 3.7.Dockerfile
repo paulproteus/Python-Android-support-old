@@ -37,6 +37,10 @@ ENV BUILD_HOME "/opt/python-build"
 ENV PYTHON_INSTALL_DIR="$BUILD_HOME/built/python"
 WORKDIR /opt/python-build
 
+FROM toolchain as opensslbuild
+RUN wget -q https://www.openssl.org/source/openssl-1.1.1d.tar.gz && sha256sum openssl-1.1.1d.tar.gz | grep -q 1e3a91bc1f9dfce01af26026f856e064eab4c8ee0a8f457b5ae30b40b8b711f2 && tar xf openssl-1.1.1d.tar.gz && rm -rf openssl-1.1.1d.tar.gz
+RUN exit 1
+
 # This build container builds Python, rubicon-java, and any dependencies.
 FROM toolchain as build
 
