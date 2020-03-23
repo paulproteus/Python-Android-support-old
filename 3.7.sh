@@ -177,7 +177,7 @@ function main() {
 
     # Make a ZIP file.
     fix_permissions
-    cd output/3.7 && zip -q -i 'app/*' -0 -r ../3.7.zip . && cd ../..
+    cd output/3.7/app && zip -q -0 -r ../../3.7.zip . && cd ../../..
 }
 
 download_urls
