@@ -156,14 +156,15 @@ fix_permissions() {
     # When using Docker on Linux, the `rsync` command creates files owned by root.
     # Compute the user ID and group ID of this script on the non-Docker side, and ask
     # Docker to adjust permissions accordingly.
-    docker run -v "${PWD}":/mnt/ --rm --entrypoint chown ubuntu:18.04 -R "$USER_AND_GROUP" /mnt/output/
+    if [ -d output ] ; then
+        docker run -v "${PWD}":/mnt/ --rm --entrypoint chown ubuntu:18.04 -R "$USER_AND_GROUP" /mnt/output/
+    fi
 }
 
 function main() {
     echo 'Starting Docker builds.'
 
     # Clear the output directory.
-    mkdir -p output
     fix_permissions
     rm -rf ./output/3.7
     mkdir -p output/3.7
